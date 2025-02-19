@@ -1,8 +1,16 @@
-import { registerRootComponent } from 'expo';
+import express from 'express'
+import App from "./Services/ExpressApp"
+import DbCon from "./Services/Database"
+import { PORT } from './config'
 
-import App from './App';
+const StartServer = async () => {
+    const app = express();
+    await DbCon();
+    await App(app);
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+    app.listen(PORT, () => {
+        console.log(`Connected on ${PORT}!!! DONE :-)`)
+    })
+}
+
+StartServer();
