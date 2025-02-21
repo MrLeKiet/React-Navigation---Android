@@ -11,7 +11,7 @@ export interface ProductListParams {
     quantity: number;
 }
 
-export interface FetchProductParam {
+export interface FetchProductsParam {
     data:{
         Products: ProductListParams[];
         results: ProductListParams[];

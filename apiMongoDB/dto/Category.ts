@@ -5,5 +5,5 @@ export interface CategoryObj {
 
 export interface UpdateCategory {
     name?: string;
-    image?: [string];
-} 
+    images?: [string];
+}

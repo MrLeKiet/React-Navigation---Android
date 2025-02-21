@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose"
-import { CategoryObj } from "../dto/Categories";
+import mongoose, { Schema } from "mongoose";
+import { CategoryObj } from "../dto/Category";
 
 const CategorySchema = new Schema(
     {
@@ -19,10 +19,10 @@ const CategorySchema = new Schema(
                 delete ret.updateAt;
             }
         },
-        timestamps: true
+        timestamp: true
     }
 );
 
-const CATEGORIES = mongoose.model<CategoryObj>("categories", CategorySchema);
+const CATEGORIES = mongoose.model<CategoryObj>("categories", CategorySchema)
 
-export { CATEGORIES };
+export { CATEGORIES }

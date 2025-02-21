@@ -21,14 +21,14 @@ export const CategoryCard = ({ item, catProps, catStyleProps }: ICatProps) => {
                     <Text style={st.catName}>{item?.name}</Text>
                 </View>
             ) : (
-                <TouchableOpacity style={[st.touchableStyle, { backgroundColor: activeButtonClass }]} key={item._id} onPress={catProps.onPress}>
+                <Pressable style={[st.touchableStyle, { backgroundColor: activeButtonClass }]} key={item._id} onPress={catProps.onPress}>
                     <View style={st.imageContainer}>
                         <Image source={{ uri: item?.images[0] }}
                             style={sty(catStyleProps.width, catStyleProps.height, catStyleProps.radius).imgStyleProps}
                             resizeMode={catStyleProps?.resizeMode}
                         />
                     </View>
-                </TouchableOpacity>
+                </Pressable>
             )}
         </View>
     )

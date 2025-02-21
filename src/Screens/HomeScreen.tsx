@@ -1,13 +1,13 @@
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect } from 'react';
-import { Platform, ScrollView, View, Text } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeadersComponent } from '../Componenets/HeaderComponents/HeaderComponent';
+import { CategoryCard } from '../Componenets/HomeScreenComponents/CategoryCard';
 import ImageSlider from '../Componenets/HomeScreenComponents/ImageSlider';
+import { fetchCategories, fetchProductsByCatID, fetchProductByFeature } from '../MiddeleWares/HomeMiddeleWare';
 import { TabsStackScreenProps } from '../Navigation/TabsNavigation';
 import { ProductListParams } from '../TypesCheck/HomeProps';
-import { CategoryCard } from '../Componenets/HomeScreenComponents/CategoryCard';
-import { fetchCategories } from '../MiddeleWares/HomeMiddeleWare';
-import { useFocusEffect } from '@react-navigation/native';
 
 type Props = {};
 
@@ -16,21 +16,36 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
         navigation.navigate("Cart");
     }
 
-    const sliderImages = [
-        "https://i.natgeofe.com/n/4cebbf38-5df4-4ed0-864a-4ebeb64d33a4/NationalGeographic_1468962_3x4.jpg",
-    ];
-
     const [getCategory, setGetCategory] = React.useState<ProductListParams[]>([]);
     const [activeCat, setActiveCat] = React.useState<string>("");
+    const [getProductsByCatID, setGetProductsByCatID] = React.useState<ProductListParams[]>([]);
+    const [getProductsByFeature, setGetProductsByFeature] = React.useState<ProductListParams[]>([]);
 
     useEffect(() => {
         fetchCategories({ setGetCategory });
+        fetchProductByFeature({ setGetProductsByFeature });
     }, []);
 
     useFocusEffect(
         useCallback(() => {
             fetchCategories({ setGetCategory });
+            fetchProductByFeature({ setGetProductsByFeature });
         }, [])
+    );
+
+    useEffect(() => {
+        if (activeCat) {
+            fetchProductsByCatID({ setGetProductsByCatID, catID: activeCat });
+        }
+    }, [activeCat]);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchCategories({ setGetCategory });
+            if (activeCat) {
+                fetchProductsByCatID({ setGetProductsByCatID, catID: activeCat });
+            }
+        }, [activeCat])
     );
 
     return (
@@ -38,12 +53,9 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
             <HeadersComponent gotoCartScreen={gotoCartScreen} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
                 style={{ backgroundColor: "#efg" }}>
-                <ImageSlider images={sliderImages} />
+                <ImageSlider images={getProductsByFeature.map(product => product.images[0])} />
             </ScrollView>
             <View style={{ backgroundColor: "yellow", flex: 1 }}>
-                <Text>
-                    Hello
-                </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 15 }}
                     style={{ marginTop: 4 }}
@@ -51,6 +63,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                     {
                         getCategory.map((item, index) => (
                             <CategoryCard
+                                key={index}
                                 item={{ "name": item.name, "images": item.images, _id: item._id }}
                                 catStyleProps={{
                                     "height": 50,
@@ -63,6 +76,47 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                                 }}
                             />
                         ))
+                    }
+                </ScrollView>
+            </View>
+            <View style={{
+                backgroundColor: "pink", flexDirection: "row", justifyContent: "space-between",
+                marginTop: 10
+            }}>
+                <Text style={{ fontSize: 14, fontWeight: "bold", padding: 10 }}>
+                    Products from Selected Category
+                </Text>
+                <Pressable>
+                    <Text style={{ fontSize: 11, fontWeight: "bold", padding: 10 }}>
+                        See ALL
+                    </Text>
+                </Pressable>
+            </View>
+            <View style={{
+                backgroundColor: "#fff", borderWidth: 7, borderColor: "green", flexDirection: "row",
+                justifyContent: "space-between", alignItems: "center", flexWrap: "wrap"
+            }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {
+                        getProductsByCatID?.length > 0 ? (
+                            getProductsByCatID.map((item, index) => (
+                                <CategoryCard
+                                    key={index}
+                                    item={{ "name": item.name, "images": item.images, "_id": item._id }}
+                                    catStyleProps={{
+                                        "height": 100,
+                                        "width": 100,
+                                        "radius": 10,
+                                        "resizeMode": "contain"
+                                    }}
+                                    catProps={{
+                                        "onPress": () => Alert.alert(item.name),
+                                    }}
+                                />
+                            ))
+                        ) : (
+                            <Text>Không có sản phẩm nào</Text>
+                        )
                     }
                 </ScrollView>
             </View>
