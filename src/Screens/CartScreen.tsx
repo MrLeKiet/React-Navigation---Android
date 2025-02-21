@@ -8,7 +8,7 @@ type Props = {};
 
 const CartScreen = ({ navigation, route }: TabsStackScreenProps<"Cart">) => {
   return (
-    <SafeAreaView style={{ paddingTop: Platform.OS === "android" ? 40 : 0, flex: 1, backgroundColor: "black" }}>
+    <SafeAreaView style={{ paddingTop: Platform.OS === "android" ? 0 : 0, flex: 1, backgroundColor: "black" }}>
       <HeadersComponent />
     </SafeAreaView>
   );

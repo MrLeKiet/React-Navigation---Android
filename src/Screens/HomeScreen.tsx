@@ -60,7 +60,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
 
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
-            <SafeAreaView style={{ paddingTop: Platform.OS === "android" ? 40 : 0, flex: 1, backgroundColor: "black" }}>
+            <SafeAreaView style={{ paddingTop: Platform.OS === "android" ? 0 : 0, flex: 1, backgroundColor: "black" }}>
                 <ScrollView>
                     <HeadersComponent gotoCartScreen={gotoCartScreen} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}

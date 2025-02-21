@@ -39,11 +39,11 @@ export const HeadersComponent = ({ goToPrevious, search, cartLength, gotoCartScr
 const styles = StyleSheet.create({
     cartNum: {
         position: "absolute",
-        top: -5,
-        right: -10,
+        top: 0,
+        right: -5,
+        height: 20,
+        width: 20,
         backgroundColor: "red",
-        borderRadius: 10,
-        paddingHorizontal: 5,
-        paddingVertical: 2,
+        borderRadius: 25,
     }
 });
