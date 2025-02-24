@@ -17,14 +17,14 @@ interface IProdByFeatureProps {
 
 export const fetchCategories = async ({ setGetCategory }: ICatProps) => {
     try {
-        const response = await axios.get("http://10.106.22.81:9000/category/getAllCategories");
+        const response = await axios.get("http://10.106.22.219:9000/category/getAllCategories");
         console.log("API Response:", response.data);
 
         if (Array.isArray(response.data)) {
             const fixedData = response.data.map(item => ({
                 ...item,
                 images: item.images.map((img: string) =>
-                    img.replace("http://localhost", "http://10.106.22.81")
+                    img.replace("http://localhost", "http://10.106.22.219")
                 )
             }));
 
@@ -41,14 +41,14 @@ export const fetchCategories = async ({ setGetCategory }: ICatProps) => {
 
 export const fetchProductsByCatID = async ({ setGetProductsByCatID, catID }: IProdByCatProps) => {
     try {
-        const response: FetchProductsParam = await axios.get(`http://10.106.22.81:9000/product/getProductByCatID/${catID}`);
+        const response: FetchProductsParam = await axios.get(`http://10.106.22.219:9000/product/getProductByCatID/${catID}`);
         console.log("API Response:", response.data);
 
         if (Array.isArray(response.data)) {
             const fixedData = response.data.map(item => ({
                 ...item,
                 images: item.images.map((img: string) =>
-                    img.replace("http://localhost", "http://10.106.22.81")
+                    img.replace("http://localhost", "http://10.106.22.219")
                 )
             }));
 
@@ -65,13 +65,13 @@ export const fetchProductsByCatID = async ({ setGetProductsByCatID, catID }: IPr
 
 export const fetchProductByFeature = async ({ setGetProductsByFeature }: IProdByFeatureProps) => {
     try {
-        const response: FetchProductsParam = await axios.get(`http://10.106.22.81:9000/product/getAllProductsIsFeature`);
+        const response: FetchProductsParam = await axios.get(`http://10.106.22.219:9000/product/getAllProductsIsFeature`);
         console.log("API Response:", response.data);
         if (Array.isArray(response.data)) {
             const fixedData = response.data.map(item => ({
                 ...item,
                 images: item.images.map((img: string) =>
-                    img.replace("http://localhost", "http://10.106.22.81")
+                    img.replace("http://localhost", "http://10.106.22.219")
                 )
             }));
 

@@ -124,8 +124,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                                                         "resizeMode": "contain"
                                                     }}
                                                     catProps={{
-                                                        "onPress": () => Alert.alert(item.name),
-                                                    }}
+                                                        "onPress": () => navigation.navigate("productDetails", item)                                                    }}
                                                 />
                                             ))
                                         ) : (
