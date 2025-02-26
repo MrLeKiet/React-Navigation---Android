@@ -9,7 +9,15 @@ import { Entypo, AntDesign, Ionicons } from "@expo/vector-icons";
 
 export type TabsStackParams = {
     Home: undefined;
-    Cart: undefined;
+    Cart?: {
+        _id: string;
+        images: [string];
+        name: string;
+        price: number;
+        color?: string;
+        size?: string;
+        quantity: number;
+    }
     Payment: undefined;
     Profile: undefined;
 };

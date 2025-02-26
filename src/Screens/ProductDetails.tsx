@@ -1,19 +1,14 @@
+import { AntDesign, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import {
-    SafeAreaView,
-    ScrollView,
-    View,
-    Text,
-    Image,
-    Pressable,
-    Alert,
-    Platform,
-    StyleSheet,
-    Dimensions,
-} from 'react-native';
+import { Dimensions, Image, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { HeadersComponent } from '../Componenets/HeaderComponents/HeaderComponent';
-import { AntDesign, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { RootStackScreenProps } from '../Navigation/RootNavigator';
+import { ProductListParams } from '../TypesCheck/HomeProps';
+import { CartState } from '../TypesCheck/productCartTypes';
+import { addToCart } from '../redux/CartReducer';
+import DisplayMessage from '../Componenets/ProductDetails/DisplayMessage';
+import { set } from 'mongoose';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +16,14 @@ const ProductDetails = ({ navigation, route }: RootStackScreenProps<'productDeta
     const { _id, images, name, price, oldPrice, inStock, color, size, description, quantity } = route.params;
 
     const gotoCartScreen = () => {
-        navigation.navigate('Cart');
+        if (cart.length == 0) {
+            setMessage("Cart is empty. Please add products to cart.");
+            setDisplayMessage(true);
+            setTimeout(() => {
+                setDisplayMessage(false);
+            }, 3000);
+        } else
+        navigation.navigate("TabsStack", { screen: "Cart" });
     };
 
     const goToPreviousScreen = () => {
@@ -31,6 +33,39 @@ const ProductDetails = ({ navigation, route }: RootStackScreenProps<'productDeta
         } else {
             console.log('Không thể quay lại, chuyển về trang Onboarding.');
             navigation.navigate('OnboardingScreen');
+        }
+    };
+    const productItemObj: ProductListParams = route.params as ProductListParams;
+    const cart = useSelector((state: CartState) => state.cart.cart);
+    const dispatch = useDispatch();
+    const [addedToCart, setAddedToCart] = React.useState(false);
+    const [message, setMessage] = React.useState("");
+    const [displayMessage, setDisplayMessage] = React.useState<boolean>(false);
+
+    const addItemToCart = (productItemObj: ProductListParams) => {
+        if (productItemObj.quantity <= 0) {
+            setMessage("Product is out of stock.");
+            setDisplayMessage(true);
+            setTimeout(() => {
+                setDisplayMessage(false);
+            }, 3000);
+        } else {
+            const findItem = cart.find((product) => product._id === _id);
+            if (findItem) {
+                setMessage("Product is already in cart.");
+                setDisplayMessage(true);
+                setTimeout(() => {
+                    setDisplayMessage(false);
+                }, 3000);
+            } else {
+                setAddedToCart(true);
+                dispatch(addToCart(productItemObj));
+                setMessage("Product added to cart successfully.");
+                setDisplayMessage(true);
+                setTimeout(() => {
+                    setDisplayMessage(false);
+                }, 3000);
+            }
         }
     };
 
@@ -92,11 +127,24 @@ const ProductDetails = ({ navigation, route }: RootStackScreenProps<'productDeta
             <View style={styles.buttonContainer}>
                 <Pressable
                     style={styles.addToCartButton}
-                    onPress={() => Alert.alert('Add to Cart', 'Product added to cart successfully.')}
+                    onPress={() =>
+                        addItemToCart(productItemObj)
+                    }
                 >
-                    <Text style={styles.addToCartText}>Thêm vào giỏ hàng</Text>
+                    {addedToCart ? (
+                        <Text style={{ color: "violet", fontSize: 20, fontWeight: "bold" }}>
+                            Add to Cart
+                        </Text>
+                    ) : (
+                        <Text style={{ color: "orange", fontSize: 20, fontWeight: "bold" }}>
+                            Add to Cart
+                        </Text>
+                    )}
                 </Pressable>
             </View>
+
+            {/* Hiển thị thông báo */}
+            {displayMessage && <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)}/>}
         </SafeAreaView>
     );
 };
@@ -258,7 +306,12 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
     },
     addToCartText: {
-        color: 'white',
+        color: 'orange',
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    addedToCartText: {
+        color: 'violet',
         fontSize: 20,
         fontWeight: 'bold',
     },

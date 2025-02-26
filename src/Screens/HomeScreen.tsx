@@ -19,10 +19,20 @@ import Swiper from 'react-native-swiper'; // Thư viện Swiper đã được c�
 import { TabsStackScreenProps } from '../Navigation/TabsNavigation';
 import { fetchCategories, fetchProductsByCatID, fetchProductByFeature } from '../MiddeleWares/HomeMiddeleWare';
 import { ProductListParams } from '../TypesCheck/HomeProps';
-
+import { useSelector } from 'react-redux';
+import { CartState } from '../TypesCheck/productCartTypes';
+import DisplayMessage from '../Componenets/ProductDetails/DisplayMessage';
 const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
+    const cart = useSelector((state: CartState) => state.cart.cart);
     const gotoCartScreen = () => {
-        navigation.navigate("Cart");
+        if (cart.length == 0) {
+            setMessage("Cart is empty. Please add products to cart.");
+            setDisplayMessage(true);
+            setTimeout(() => {
+                setDisplayMessage(false);
+            }, 3000);
+        } else
+            navigation.navigate("TabsStack", { screen: "Cart" });
     };
 
     const [getCategory, setGetCategory] = useState<ProductListParams[]>([]);
@@ -30,7 +40,8 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     const [getProductsByCatID, setGetProductsByCatID] = useState<ProductListParams[]>([]);
     const [getProductsByFeature, setGetProductsByFeature] = useState<ProductListParams[]>([]);
     const [isViewVisible, setIsViewVisible] = useState<boolean>(true);
-
+    const [message, setMessage] = React.useState("");
+    const [displayMessage, setDisplayMessage] = React.useState<boolean>(false);
     useEffect(() => {
         fetchCategories({ setGetCategory });
         fetchProductByFeature({ setGetProductsByFeature });
@@ -80,6 +91,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <SafeAreaView style={styles.safeArea}>
+            {displayMessage && <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)} />}
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <HeadersComponent gotoCartScreen={gotoCartScreen} />
 
