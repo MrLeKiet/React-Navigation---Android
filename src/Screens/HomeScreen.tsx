@@ -1,38 +1,39 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
-    Alert,
+    Image,
     Platform,
     Pressable,
     ScrollView,
+    StyleSheet,
     Text,
+    TouchableOpacity,
     TouchableWithoutFeedback,
     View,
-    StyleSheet,
-    Image,
-    TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Swiper from 'react-native-swiper'; // Ensure this library is correctly installed
+import { useSelector } from 'react-redux';
 import { HeadersComponent } from '../Componenets/HeaderComponents/HeaderComponent';
 import { CategoryCard } from '../Componenets/HomeScreenComponents/CategoryCard';
-import Swiper from 'react-native-swiper'; // Thư viện Swiper đã được cài đặt
-import { TabsStackScreenProps } from '../Navigation/TabsNavigation';
-import { fetchCategories, fetchProductsByCatID, fetchProductByFeature } from '../MiddeleWares/HomeMiddeleWare';
-import { ProductListParams } from '../TypesCheck/HomeProps';
-import { useSelector } from 'react-redux';
-import { CartState } from '../TypesCheck/productCartTypes';
 import DisplayMessage from '../Componenets/ProductDetails/DisplayMessage';
+import { fetchCategories, fetchProductByFeature, fetchProductsByCatID } from '../MiddeleWares/HomeMiddeleWare';
+import { TabsStackScreenProps } from '../Navigation/TabsNavigation';
+import { ProductListParams } from '../TypesCheck/HomeProps';
+import { CartState } from '../TypesCheck/productCartTypes';
+
 const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     const cart = useSelector((state: CartState) => state.cart.cart);
     const gotoCartScreen = () => {
-        if (cart.length == 0) {
+        if (cart.length === 0) {
             setMessage("Cart is empty. Please add products to cart.");
             setDisplayMessage(true);
             setTimeout(() => {
                 setDisplayMessage(false);
             }, 3000);
-        } else
+        } else {
             navigation.navigate("TabsStack", { screen: "Cart" });
+        }
     };
 
     const [getCategory, setGetCategory] = useState<ProductListParams[]>([]);
@@ -42,6 +43,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     const [isViewVisible, setIsViewVisible] = useState<boolean>(true);
     const [message, setMessage] = React.useState("");
     const [displayMessage, setDisplayMessage] = React.useState<boolean>(false);
+
     useEffect(() => {
         fetchCategories({ setGetCategory });
         fetchProductByFeature({ setGetProductsByFeature });
@@ -51,6 +53,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
         useCallback(() => {
             fetchCategories({ setGetCategory });
             fetchProductByFeature({ setGetProductsByFeature });
+            console.log("Focused - Featured products:", getProductsByFeature); // Debug data
         }, [])
     );
 
@@ -70,12 +73,12 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     );
 
     const handleOutsideClick = () => {
-        // Không làm gì cả, giữ nguyên isViewVisible để không đóng danh sách khi nhấn ngoài
+        // Do nothing, keep isViewVisible unchanged to not close the list when tapping outside
     };
 
     const handleCategoryClick = (catID: string) => {
         if (activeCat === catID) {
-            // Nếu nhấn lại vào category đang active, reset để đóng danh sách
+            // If clicking the active category again, reset to close the list
             setActiveCat("");
             setIsViewVisible(false);
         } else {
@@ -88,23 +91,33 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
         navigation.navigate("productDetails", product);
     };
 
+    // Add a ref to the Swiper for debugging or controlling it manually if needed
+    const swiperRef = useRef<any>(null);
+
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <SafeAreaView style={styles.safeArea}>
-            {displayMessage && <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)} />}
+                {displayMessage && <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)} />}
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <HeadersComponent gotoCartScreen={gotoCartScreen} />
+                    <HeadersComponent gotoCartScreen={gotoCartScreen} navigateToProductDetail={handleProductPress} />
 
                     {/* Slider hình ảnh với điều hướng */}
                     <View style={styles.sliderContainer}>
                         <Swiper
+                            ref={swiperRef}
                             style={styles.slider}
                             showsButtons={false}
-                            autoplay={true}
-                            autoplayTimeout={3} // Thay đổi ảnh mỗi 3 giây
+                            autoplay={false}
+                            autoplayTimeout={3} // Change slide every 3 seconds
                             dotColor="grey"
                             activeDotColor="black"
                             loop={true}
+                            paginationStyle={{ bottom: 10 }} // Position pagination dots
+                            onIndexChanged={(index) => console.log("Current slide index:", index)} // Debug current slide
+                            onMomentumScrollEnd={(e, state, context) => console.log("Scroll ended at index:", state.index)}
+                            scrollEnabled={true} // Ensure scrolling is enabled
+                            // Force update if needed
+                            key={getProductsByFeature.length} // Force re-render if data changes
                         >
                             {getProductsByFeature.length > 0 ? (
                                 getProductsByFeature.map((product, index) => (
@@ -116,6 +129,8 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                                         <Image
                                             style={styles.slideImage}
                                             source={{ uri: product.images[0] }}
+                                            onError={(e) => console.log("Image load error for product:", product.name, e)}
+                                            onLoad={() => console.log("Image loaded for product:", product.name)}
                                         />
                                     </TouchableOpacity>
                                 ))
@@ -198,11 +213,11 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F5F5', // Nền xám nhạt
+        backgroundColor: '#F5F5F5', // Light gray background
         paddingTop: Platform.OS === 'android' ? 0 : 0,
     },
     scrollContent: {
-        paddingBottom: 20, // Đệm dưới để tránh bị che
+        paddingBottom: 20, // Bottom padding to avoid being obscured
     },
     sliderContainer: {
         marginVertical: 10,
@@ -212,7 +227,7 @@ const styles = StyleSheet.create({
     },
     slideImage: {
         width: '100%',
-        height: 200,
+        height: '100%', // Ensure the image fills the slider height
         resizeMode: 'cover',
     },
     noImageText: {
@@ -223,7 +238,7 @@ const styles = StyleSheet.create({
     },
     categoryContainer: {
         marginVertical: 10,
-        backgroundColor: '#F5F5F5', // Nền xám nhạt
+        backgroundColor: '#F5F5F5', // Light gray background
     },
     categoryContent: {
         paddingHorizontal: 15,
@@ -245,7 +260,7 @@ const styles = StyleSheet.create({
     },
     seeAll: {
         fontSize: 14,
-        color: '#28A745', // Màu xanh lá cho nút "See ALL"
+        color: '#28A745', // Green color for "See ALL" button
         fontWeight: 'bold',
     },
     productListContainer: {

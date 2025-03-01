@@ -5,7 +5,7 @@ import TabsNavigator, { TabsStackParams } from "./TabsNavigation";
 import { NavigatorScreenParams } from "@react-navigation/native";
 import ProductDetails from "../Screens/ProductDetails";
 import { Image } from 'react-native';
-
+import UserAuth from "../Screens/LoginRegisterScreen";
 export type RootStackParams = {
     OnboardingScreen: undefined;
     TabsStack: NavigatorScreenParams<TabsStackParams>;
@@ -33,6 +33,15 @@ export type RootStackParams = {
         size?: string;
         quantity: number;
     }
+    UserLogin: {
+        email?: string;
+        password?: string;
+        confirmPassword?: string;
+        firstName?: string;
+        lastName?: string;
+        mobileNo?: string;
+        screenTitle?: string;
+    }
 };
 
 const RootStack = createNativeStackNavigator<RootStackParams>();
@@ -55,6 +64,11 @@ const RootNavigator = () => {
             <RootStack.Screen
                 name="productDetails"
                 component={ProductDetails}
+                options={{ headerShown: false }}
+            />
+            <RootStack.Screen
+                name="UserLogin"
+                component={UserAuth}
                 options={{ headerShown: false }}
             />
         </RootStack.Navigator>

@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express"
+import { Request, Response } from "express"
 import { PRODUCTS } from "../Models/ProductModel"
 import { ProductParams } from "../dto/Product"
 
@@ -60,3 +60,13 @@ export const getAllProductsIsFeature = async (req: Request, res: Response) => {
         res.status(500).json(`Products not found ${error}`)
     }
 }
+
+export const searchProductByName = async (req: Request, res: Response) => {
+    const { name } = req.query;
+    try {
+        const result = await PRODUCTS.find({ name: { $regex: name, $options: "i" } });
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(500).json(`Product search failed ${error}`);
+    }
+};

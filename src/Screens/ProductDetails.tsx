@@ -2,13 +2,13 @@ import { AntDesign, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import React from 'react';
 import { Dimensions, Image, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import Swiper from 'react-native-swiper';
 import { HeadersComponent } from '../Componenets/HeaderComponents/HeaderComponent';
 import { RootStackScreenProps } from '../Navigation/RootNavigator';
 import { ProductListParams } from '../TypesCheck/HomeProps';
 import { CartState } from '../TypesCheck/productCartTypes';
 import { addToCart } from '../redux/CartReducer';
 import DisplayMessage from '../Componenets/ProductDetails/DisplayMessage';
-import { set } from 'mongoose';
 
 const { width } = Dimensions.get('window');
 
@@ -76,7 +76,25 @@ const ProductDetails = ({ navigation, route }: RootStackScreenProps<'productDeta
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Phần hình ảnh */}
                 <View style={styles.imageContainer}>
-                    <Image style={styles.productImage} source={{ uri: images[0] }} />
+                    <Swiper
+                        style={styles.slider}
+                        showsButtons={false}
+                        autoplay={true}
+                        autoplayTimeout={3} // Change slide every 3 seconds
+                        dotColor="grey"
+                        activeDotColor="black"
+                        loop={true}
+                        paginationStyle={{ bottom: 10 }} // Position pagination dots
+                    >
+                        {images.map((image, index) => (
+                            <Image
+                                key={index}
+                                style={styles.productImage}
+                                source={{ uri: image }}
+                                onError={(e) => console.log("Image load error:", e)}
+                            />
+                        ))}
+                    </Swiper>
                     <View style={styles.imageOverlay}>
                         <View style={styles.discountBadge}>
                             <Text style={styles.discountText}>
@@ -161,6 +179,9 @@ const styles = StyleSheet.create({
     imageContainer: {
         position: 'relative',
         marginTop: 10,
+    },
+    slider: {
+        height: width * 0.9, // Adjust the height as needed
     },
     productImage: {
         width: width,

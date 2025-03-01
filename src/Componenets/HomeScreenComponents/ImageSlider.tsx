@@ -1,6 +1,20 @@
-import React, { useRef, useState } from "react";
-import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
-import { useInterval } from "../../Hooks/UseInterval";
+import React, { useRef, useState, useEffect } from "react";
+import { Animated, Dimensions, Image, StyleSheet, View, Easing } from "react-native";
+
+const useInterval = (callback: () => void, delay: number | null) => {
+    const savedCallback = useRef<() => void>();
+
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
+
+    useEffect(() => {
+        if (delay !== null) {
+            const id = setInterval(() => savedCallback.current?.(), delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
+};
 
 interface ImageProps {
     images: string[];
@@ -8,38 +22,57 @@ interface ImageProps {
 
 const Max_Width = Dimensions.get("screen").width;
 const ImageSlider = ({ images }: ImageProps) => {
-    const animation = useRef(new Animated.Value(0));
+    const animation = useRef(new Animated.Value(0)).current;
     const [currentImage, setCurrentImage] = useState(0);
 
     const handleAnimation = () => {
-        let newCurrentImage = currentImage + 1;
-        if (newCurrentImage >= images.length) {
-            newCurrentImage = 0;
-        }
-
-        Animated.spring(animation.current, {
-            toValue: -(Dimensions.get("screen").width * newCurrentImage),
-            useNativeDriver: true,
-        }).start();
+        const newCurrentImage = (currentImage + 1) % images.length;
         setCurrentImage(newCurrentImage);
+
+        Animated.timing(animation, {
+            toValue: -(Max_Width * newCurrentImage),
+            duration: 500,
+            useNativeDriver: true,
+            easing: Easing.linear,
+        }).start(() => console.log("Animation completed for image:", newCurrentImage));
     };
 
-    useInterval(() => handleAnimation(), 2000);
+    useEffect(() => {
+        console.log("Slider images:", images);
+        const interval = setInterval(() => {
+            console.log("Interval triggered");
+            handleAnimation();
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [handleAnimation, images]);
+
+    useEffect(() => {
+        animation.setValue(0);
+        setCurrentImage(0);
+    }, [images, animation]);
+
+    console.log("Screen width:", Max_Width);
 
     return (
         <View>
-            <Animated.View style={[styles.container, { transform: [{ translateX: animation.current }] }]}>
-                {images.map((image) => (
-                    <Image key={image} source={{ uri: image }} style={styles.image} />
+            <Animated.View style={[styles.container, { transform: [{ translateX: animation }] }]}>
+                {images.map((image, index) => (
+                    <Image
+                        key={image}
+                        source={{ uri: image }}
+                        style={styles.image}
+                        onError={(e) => console.log("Image load error for URI:", image, e)}
+                        onLoad={() => console.log("Image loaded for URI:", image)}
+                    />
                 ))}
             </Animated.View>
             <View style={styles.indicatorContainer}>
-                {images.map((image, index) => (
+                {images.map((_, index) => (
                     <View
-                        key={`${image}_${index}`}
+                        key={index}
                         style={[
                             styles.indicator,
-                            index === currentImage ? styles.activeIndicator : undefined
+                            index === currentImage ? styles.activeIndicator : undefined,
                         ]}
                     />
                 ))}
@@ -54,14 +87,14 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: "row",
         backgroundColor: "#fff",
-        alignItems: "center"
+        alignItems: "center",
     },
     image: {
         resizeMode: "contain",
         height: 220,
-        width: Dimensions.get("screen").width,
+        width: Max_Width,
         borderWidth: 7,
-        borderColor: "white"
+        borderColor: "white",
     },
     indicatorContainer: {
         flexDirection: "row",
@@ -70,6 +103,7 @@ const styles = StyleSheet.create({
         width: Max_Width,
         bottom: 0,
         zIndex: 2,
+        paddingVertical: 10,
     },
     indicator: {
         width: 10,
@@ -78,7 +112,6 @@ const styles = StyleSheet.create({
         borderColor: "silver",
         borderWidth: 1,
         marginHorizontal: 3,
-        marginBottom: 0,
         backgroundColor: "#eee",
     },
     activeIndicator: {

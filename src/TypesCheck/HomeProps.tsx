@@ -9,6 +9,9 @@ export interface ProductListParams {
     size?: string;
     description?: string;
     quantity: number;
+    categoryName?: string;
+    isFeatured?: boolean;
+    category?: string;
 }
 
 export interface FetchProductsParam {
