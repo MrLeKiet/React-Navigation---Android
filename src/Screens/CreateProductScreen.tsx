@@ -14,12 +14,12 @@ import {
 import { HeadersComponent } from "../Componenets/HeaderComponents/HeaderComponent";
 import * as ImagePicker from "expo-image-picker";
 import { createProduct, fetchCategories } from "../MiddeleWares/HomeMiddeleWare";
-import { TabsStackScreenProps } from "../Navigation/TabsNavigation";
+import { RootStackScreenProps } from "../Navigation/RootNavigator";
 import { ProductListParams } from "../TypesCheck/HomeProps";
 import DisplayMessage from "../Componenets/ProductDetails/DisplayMessage";
 
-const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct">) => {
-    const [form, setForm] = useState<Omit<ProductListParams, "images" | "_id"> & { imageUri?: string }>({
+const CreateProductScreen = ({ navigation }: RootStackScreenProps<"CreateProduct">) => {
+    const [form, setForm] = useState<Omit<ProductListParams, "images" | "_id"> & { images: string[] }>({
         name: "",
         price: 0,
         oldPrice: 0,
@@ -28,7 +28,7 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
         quantity: 0,
         category: "", // Store the category ID
         categoryName: "", // Store the category name for display
-        imageUri: undefined, // Will be set after image pick
+        images: [], // Array to store up to 3 image URIs
     });
     const [displayMessage, setDisplayMessage] = useState(false);
     const [message, setMessage] = useState("");
@@ -64,7 +64,7 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
     };
 
     const pickImage = () => {
-        console.log("Pick Image button pressed");
+        console.log("Pick Images button pressed");
         if (Platform.OS !== "web") {
             launchImagePicker();
         } else {
@@ -81,6 +81,7 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsMultipleSelection: true, // Enable multiple image selection
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.8,
@@ -93,18 +94,20 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
                 setDisplayMessage(true);
                 setTimeout(() => setDisplayMessage(false), 3000);
             } else if (result.assets && result.assets.length > 0) {
-                const asset = result.assets[0];
-                console.log("Selected image URI:", asset.uri);
-                setForm({ ...form, imageUri: asset.uri });
-                setMessage("Image selected successfully");
+                // Limit to 3 images total (including existing ones)
+                const newImages = result.assets.map(asset => asset.uri);
+                const updatedImages = [...form.images, ...newImages].slice(0, 3); // Keep only up to 3 images
+                console.log("Selected image URIs:", updatedImages);
+                setForm({ ...form, images: updatedImages });
+                setMessage("Images selected successfully");
                 setDisplayMessage(true);
                 setTimeout(() => setDisplayMessage(false), 3000);
             } else {
                 console.log("Unexpected result format:", result);
-                setMessage("Unexpected error selecting image");
+                setMessage("Unexpected error selecting images");
                 setDisplayMessage(true);
                 setTimeout(() => setDisplayMessage(false), 3000);
-                Alert.alert("Error", "Unexpected error selecting image. Please try again.");
+                Alert.alert("Error", "Unexpected error selecting images. Please try again.");
             }
         } catch (err) {
             console.log("Error launching image picker:", err);
@@ -122,25 +125,25 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
     };
 
     const submitProduct = () => {
-        if (!form.imageUri) {
-            setMessage("Please select an image");
+        if (form.images.length === 0) {
+            setMessage("Please select at least one image");
             setDisplayMessage(true);
             setTimeout(() => setDisplayMessage(false), 3000);
             return;
         }
 
-        const productData: Omit<ProductListParams, "images" | "_id"> & { imageUri: string } = {
+        const productData: Omit<ProductListParams, "images" | "_id"> & { images: string[] } = {
             name: form.name,
             price: form.price,
             oldPrice: form.oldPrice || undefined,
             inStock: form.inStock,
             description: form.description || undefined,
             quantity: form.quantity,
-            imageUri: form.imageUri,
+            images: form.images, // Send array of image URIs
             category: form.category || undefined, // Send the ID to the backend
         };
 
-        console.log("Submitting product data with category ID:", productData); // Debug log
+        console.log("Submitting product data with images and category ID:", productData); // Debug log
 
         createProduct({
             productData,
@@ -160,7 +163,7 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
                     quantity: 0,
                     category: "",
                     categoryName: "",
-                    imageUri: undefined,
+                    images: [], // Reset images array
                 });
             },
             onError: (errorMessage) => {
@@ -192,113 +195,156 @@ const CreateProductScreen = ({ navigation }: TabsStackScreenProps<"CreateProduct
                 <View style={styles.formContainer}>
                     <Text style={styles.title}>Create New Product</Text>
 
-                    <TextInput
-                        placeholder="Product Name"
-                        value={form.name}
-                        onChangeText={(text) => handleInputChange("name", text)}
-                        style={styles.input}
-                    />
-                    <View style={styles.categoryContainer}>
-                        <Pressable
-                            onPress={() => {
-                                console.log("Toggling categories, current categoryName:", form.categoryName);
-                                setShowCategories(!showCategories);
-                            }}
-                            style={styles.categoryButton}
-                        >
-                            <View style={styles.categoryButtonContent}>
-                                {form.categoryName ? (
-                                    <View style={styles.categoryButtonItem}>
-                                        <Text style={styles.categoryButtonText}>
-                                            {form.categoryName || "Select Category"}
-                                        </Text>
-                                    </View>
-                                ) : (
-                                    <Text style={styles.categoryButtonText}>Select Category</Text>
-                                )}
-                            </View>
-                        </Pressable>
-                        {showCategories && (
-                            <View style={styles.categoryDropdown}>
-                                <ScrollView style={styles.categoryScrollView}>
-                                    {categories.length > 0 ? (
-                                        categories.map((cat) => (
-                                            <Pressable
-                                                key={cat._id}
-                                                onPress={() => selectCategory(cat._id, cat.name)} // Pass both ID and name
-                                                style={styles.categoryItem}
-                                            >
-                                                <View style={styles.categoryItemContent}>
-                                                    {cat.images && cat.images.length > 0 && (
-                                                        <Image
-                                                            source={{ uri: cat.images[0] }} // Use first image if available
-                                                            style={styles.categoryImage}
-                                                            onError={(e) => console.log("Category image load error:", e)}
-                                                        />
-                                                    )}
-                                                    <View style={styles.categoryInfo}>
-                                                        <Text style={styles.categoryText} numberOfLines={1}>
-                                                            {cat.name}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            </Pressable>
-                                        ))
-                                    ) : (
-                                        <Text style={styles.noCategoryText}>No categories available</Text>
-                                    )}
-                                </ScrollView>
-                            </View>
-                        )}
-                    </View>
-                    <TextInput
-                        placeholder="Price"
-                        value={String(form.price)}
-                        onChangeText={(text) => handleInputChange("price", text)}
-                        keyboardType="numeric"
-                        style={styles.input}
-                    />
-                    <TextInput
-                        placeholder="Old Price (optional)"
-                        value={String(form.oldPrice)}
-                        onChangeText={(text) => handleInputChange("oldPrice", text)}
-                        keyboardType="numeric"
-                        style={styles.input}
-                    />
-                    <View style={styles.toggleContainer}>
-                        <Text style={styles.toggleLabel}>In Stock:</Text>
-                        <Pressable
-                            onPress={toggleInStock}
-                            style={[styles.toggleButton, form.inStock && styles.toggleButtonActive]}
-                        >
-                            <Text style={styles.toggleButtonText}>
-                                {form.inStock ? "True" : "False"}
-                            </Text>
-                        </Pressable>
-                    </View>
-                    <TextInput
-                        placeholder="Description (optional)"
-                        value={form.description}
-                        onChangeText={(text) => handleInputChange("description", text)}
-                        style={styles.input}
-                        multiline
-                    />
-                    <TextInput
-                        placeholder="Quantity"
-                        value={String(form.quantity)}
-                        onChangeText={(text) => handleInputChange("quantity", text)}
-                        keyboardType="numeric"
-                        style={styles.input}
-                    />
-                    <Pressable onPress={pickImage} style={styles.imageButton}>
-                        <Text style={styles.imageButtonText}>Pick Image</Text>
-                    </Pressable>
-                    {form.imageUri && (
-                        <Image
-                            source={{ uri: form.imageUri }}
-                            style={styles.productImage}
-                            onError={(e) => console.log("Image load error:", e)}
+                    {/* Product Name: Input box */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Product Name:</Text>
+                        <TextInput
+                            placeholder="Enter product name"
+                            value={form.name}
+                            onChangeText={(text) => handleInputChange("name", text)}
+                            style={styles.input}
                         />
+                    </View>
+
+                    {/* Select Category: Dropdown button */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Select Category:</Text>
+                        <View style={styles.categoryContainer}>
+                            <Pressable
+                                onPress={() => {
+                                    console.log("Toggling categories, current categoryName:", form.categoryName);
+                                    setShowCategories(!showCategories);
+                                }}
+                                style={styles.categoryButton}
+                            >
+                                <View style={styles.categoryButtonContent}>
+                                    {form.categoryName ? (
+                                        <View style={styles.categoryButtonItem}>
+                                            <Text style={styles.categoryButtonText}>
+                                                {form.categoryName || "Select Category"}
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.categoryButtonText}>Select Category</Text>
+                                    )}
+                                </View>
+                            </Pressable>
+                            {showCategories && (
+                                <View style={styles.categoryDropdown}>
+                                    <ScrollView style={styles.categoryScrollView}>
+                                        {categories.length > 0 ? (
+                                            categories.map((cat) => (
+                                                <Pressable
+                                                    key={cat._id}
+                                                    onPress={() => selectCategory(cat._id, cat.name)} // Pass both ID and name
+                                                    style={styles.categoryItem}
+                                                >
+                                                    <View style={styles.categoryItemContent}>
+                                                        {cat.images && cat.images.length > 0 && (
+                                                            <Image
+                                                                source={{ uri: cat.images[0] }} // Use first image if available
+                                                                style={styles.categoryImage}
+                                                                onError={(e) => console.log("Category image load error:", e)}
+                                                            />
+                                                        )}
+                                                        <View style={styles.categoryInfo}>
+                                                            <Text style={styles.categoryText} numberOfLines={1}>
+                                                                {cat.name}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                </Pressable>
+                                            ))
+                                        ) : (
+                                            <Text style={styles.noCategoryText}>No categories available</Text>
+                                        )}
+                                    </ScrollView>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Price */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Price:</Text>
+                        <TextInput
+                            placeholder="Enter price"
+                            value={String(form.price)}
+                            onChangeText={(text) => handleInputChange("price", text)}
+                            keyboardType="numeric"
+                            style={styles.input}
+                        />
+                    </View>
+
+                    {/* Old Price */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Old Price:</Text>
+                        <TextInput
+                            placeholder="Enter old price"
+                            value={String(form.oldPrice)}
+                            onChangeText={(text) => handleInputChange("oldPrice", text)}
+                            keyboardType="numeric"
+                            style={styles.input}
+                        />
+                    </View>
+
+                    {/* In Stock */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>In Stock:</Text>
+                        <View style={styles.toggleContainer}>
+                            <Pressable
+                                onPress={toggleInStock}
+                                style={[styles.toggleButton, form.inStock && styles.toggleButtonActive]}
+                            >
+                                <Text style={styles.toggleButtonText}>
+                                    {form.inStock ? "True" : "False"}
+                                </Text>
+                            </Pressable>
+                        </View>
+                    </View>
+
+                    {/* Description */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Description:</Text>
+                        <TextInput
+                            placeholder="Enter description"
+                            value={form.description}
+                            onChangeText={(text) => handleInputChange("description", text)}
+                            style={styles.input}
+                            multiline
+                        />
+                    </View>
+
+                    {/* Quantity */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Quantity:</Text>
+                        <TextInput
+                            placeholder="Enter quantity"
+                            value={String(form.quantity)}
+                            onChangeText={(text) => handleInputChange("quantity", text)}
+                            keyboardType="numeric"
+                            style={styles.input}
+                        />
+                    </View>
+
+                    {/* Pick Images */}
+                    <View style={styles.formField}>
+                        <Text style={styles.label}>Images:</Text>
+                        <Pressable onPress={pickImage} style={styles.imageButton}>
+                            <Text style={styles.imageButtonText}>Pick Images (Up to 3)</Text>
+                        </Pressable>
+                    </View>
+                    {form.images.length > 0 && (
+                        <View style={styles.imagePreviewContainer}>
+                            {form.images.map((uri, index) => (
+                                <Image
+                                    key={index}
+                                    source={{ uri }}
+                                    style={styles.productImage}
+                                    onError={(e) => console.log("Image load error:", e)}
+                                />
+                            ))}
+                        </View>
                     )}
 
                     <Pressable onPress={submitProduct} style={styles.submitButton}>
@@ -337,24 +383,27 @@ const styles = StyleSheet.create({
         color: "#000",
         marginBottom: 15,
     },
+    formField: {
+        marginBottom: 15,
+    },
+    label: {
+        fontSize: 16,
+        color: "#333",
+        marginBottom: 5,
+        fontWeight: "500",
+    },
     input: {
         backgroundColor: "#F0F0F0",
         borderRadius: 8,
         padding: 10,
         fontSize: 16,
         color: "#333",
-        marginBottom: 15,
         borderWidth: 1,
         borderColor: "#E0E0E0",
     },
     toggleContainer: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 15,
-    },
-    toggleLabel: {
-        fontSize: 16,
-        marginRight: 10,
     },
     toggleButton: {
         paddingVertical: 8,
@@ -370,7 +419,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     categoryContainer: {
-        marginBottom: 15,
+        marginBottom: 0, // No additional margin since it's in formField
     },
     categoryButton: {
         backgroundColor: "#F0F0F0",
@@ -457,15 +506,20 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#000",
     },
+    imagePreviewContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        marginBottom: 15,
+    },
     productImage: {
-        width: 120,
-        height: 120,
+        width: 100, // Smaller images for preview
+        height: 100,
         resizeMode: "contain",
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "#E0E0E0",
-        marginBottom: 15,
-        alignSelf: "center",
+        margin: 5,
     },
     submitButton: {
         backgroundColor: "#FFC72C",

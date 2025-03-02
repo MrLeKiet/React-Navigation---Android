@@ -3,11 +3,9 @@ import { BottomTabScreenProps, createBottomTabNavigator } from "@react-navigatio
 import { CompositeScreenProps } from "@react-navigation/native";
 import CartScreen from "../Screens/CartScreen";
 import HomeScreen from "../Screens/HomeScreen";
-import OrderScreen from "../Screens/OrderScreen";
-import PaymentScreen from "../Screens/PaymentScreen";
 import ProfileScreen from "../Screens/ProfileScreen";
 import { RootStackScreenProps } from "./RootNavigator";
-import CreateProductScreen from "../Screens/CreateProductScreen";
+import ProductScreen from "../Screens/ProductScreen";
 
 export type TabsStackParams = {
     Home: undefined;
@@ -19,11 +17,24 @@ export type TabsStackParams = {
         color?: string;
         size?: string;
         quantity: number;
+        shouldShowOrder?: boolean;
+        returnToCart?: boolean;
     };
+    UserLogin: {
+        email?: string;
+        password?: string;
+        confirmPassword?: string;
+        firstName?: string;
+        lastName?: string;
+        mobileNo?: string;
+        screenTitle?: string;
+    };
+    
     Payment: undefined;
     Profile: undefined;
     Order: undefined; // Add Order screen here
     CreateProduct: undefined;
+    Product: undefined;
 };
 
 const TabsStack = createBottomTabNavigator<TabsStackParams>();
@@ -64,8 +75,8 @@ const TabsNavigator = () => {
                 }}
             />
             <TabsStack.Screen
-                name="Payment"
-                component={PaymentScreen}
+                name="Product"
+                component={ProductScreen}
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) =>
@@ -79,32 +90,6 @@ const TabsNavigator = () => {
             <TabsStack.Screen
                 name="Profile"
                 component={ProfileScreen}
-                options={{
-                    headerShown: false,
-                    tabBarIcon: ({ focused }) =>
-                        focused ? (
-                            <Ionicons name="person" size={24} color="#00970a" />
-                        ) : (
-                            <Ionicons name="person-outline" size={24} color="#000" />
-                        ),
-                }}
-            />
-            <TabsStack.Screen
-                name="Order"
-                component={OrderScreen}
-                options={{
-                    headerShown: false,
-                    tabBarIcon: ({ focused }) =>
-                        focused ? (
-                            <Ionicons name="person" size={24} color="#00970a" />
-                        ) : (
-                            <Ionicons name="person-outline" size={24} color="#000" />
-                        ),
-                }}
-            />
-            <TabsStack.Screen
-                name="CreateProduct"
-                component={CreateProductScreen}
                 options={{
                     headerShown: false,
                     tabBarIcon: ({ focused }) =>

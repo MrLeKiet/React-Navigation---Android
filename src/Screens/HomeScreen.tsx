@@ -1,5 +1,5 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
     Image,
     Platform,
@@ -10,20 +10,27 @@ import {
     TouchableOpacity,
     TouchableWithoutFeedback,
     View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Swiper from 'react-native-swiper'; // Ensure this library is correctly installed
-import { useSelector } from 'react-redux';
-import { HeadersComponent } from '../Componenets/HeaderComponents/HeaderComponent';
-import { CategoryCard } from '../Componenets/HomeScreenComponents/CategoryCard';
-import DisplayMessage from '../Componenets/ProductDetails/DisplayMessage';
-import { fetchCategories, fetchProductByFeature, fetchProductsByCatID } from '../MiddeleWares/HomeMiddeleWare';
-import { TabsStackScreenProps } from '../Navigation/TabsNavigation';
-import { ProductListParams } from '../TypesCheck/HomeProps';
-import { CartState } from '../TypesCheck/productCartTypes';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Swiper from "react-native-swiper"; // Ensure this library is correctly installed
+import { useSelector, useDispatch } from "react-redux";
+import { HeadersComponent } from "../Componenets/HeaderComponents/HeaderComponent";
+import { CategoryCard } from "../Componenets/HomeScreenComponents/CategoryCard";
+import DisplayMessage from "../Componenets/ProductDetails/DisplayMessage";
+import {
+    fetchCategories,
+    fetchProductByFeature,
+    fetchProductsByCatID,
+} from "../MiddeleWares/HomeMiddeleWare";
+import { TabsStackScreenProps } from "../Navigation/TabsNavigation";
+import { ProductListParams } from "../TypesCheck/HomeProps";
+import { CartState } from "../TypesCheck/productCartTypes";
+import { removeFavorite } from "../redux/HeartReducer"; // Import removeFavorite action
 
 const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
     const cart = useSelector((state: CartState) => state.cart.cart);
+    const favorites = useSelector((state: any) => state.favorites.favorites); // Get favorites from Redux
+    const dispatch = useDispatch();
     const gotoCartScreen = () => {
         if (cart.length === 0) {
             setMessage("Cart is empty. Please add products to cart.");
@@ -91,15 +98,29 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
         navigation.navigate("productDetails", product);
     };
 
+    const handleRemoveFavorite = (productId: string) => {
+        dispatch(removeFavorite(productId));
+        setMessage("Product removed from favorites.");
+        setDisplayMessage(true);
+        setTimeout(() => {
+            setDisplayMessage(false);
+        }, 3000);
+    };
+
     // Add a ref to the Swiper for debugging or controlling it manually if needed
     const swiperRef = useRef<any>(null);
 
     return (
         <TouchableWithoutFeedback onPress={handleOutsideClick}>
             <SafeAreaView style={styles.safeArea}>
-                {displayMessage && <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)} />}
+                {displayMessage && (
+                    <DisplayMessage message={message} visible={() => setDisplayMessage(!displayMessage)} />
+                )}
                 <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <HeadersComponent gotoCartScreen={gotoCartScreen} navigateToProductDetail={handleProductPress} />
+                    <HeadersComponent
+                        gotoCartScreen={gotoCartScreen}
+                        navigateToProductDetail={handleProductPress}
+                    />
 
                     {/* Slider hình ảnh với điều hướng */}
                     <View style={styles.sliderContainer}>
@@ -107,7 +128,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                             ref={swiperRef}
                             style={styles.slider}
                             showsButtons={false}
-                            autoplay={false}
+                            autoplay={true}
                             autoplayTimeout={3} // Change slide every 3 seconds
                             dotColor="grey"
                             activeDotColor="black"
@@ -142,6 +163,7 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
 
                     {/* Danh mục sản phẩm */}
                     <View style={styles.categoryContainer}>
+                    <Text style={styles.sectionTitle}>    Category:</Text>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
@@ -204,6 +226,41 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
                             </View>
                         </View>
                     )}
+
+                    {/* Danh sách sản phẩm yêu thích (Favorited Products) */}
+                    {favorites.length > 0 && (
+                        <View style={styles.productSection}>
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>Favorite Products</Text>
+                                <Pressable onPress={() => navigation.navigate("FavoriteProduct")}>
+                                    <Text style={styles.seeAll}>See ALL</Text>
+                                </Pressable>
+                            </View>
+                            <View style={styles.productListContainer}>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.productListContent}
+                                >
+                                    {favorites.map((item: ProductListParams, index: number) => (
+                                        <CategoryCard
+                                            key={index}
+                                            item={{ name: item.name, images: item.images, _id: item._id }}
+                                            catStyleProps={{
+                                                height: 100,
+                                                width: 100,
+                                                radius: 10,
+                                                resizeMode: "contain",
+                                            }}
+                                            catProps={{
+                                                onPress: () => navigation.navigate("productDetails", item),
+                                            }}
+                                        />
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        </View>
+                    )}
                 </ScrollView>
             </SafeAreaView>
         </TouchableWithoutFeedback>
@@ -213,8 +270,8 @@ const HomeScreen = ({ navigation, route }: TabsStackScreenProps<"Home">) => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#F5F5F5', // Light gray background
-        paddingTop: Platform.OS === 'android' ? 0 : 0,
+        backgroundColor: "#F5F5F5", // Light gray background
+        paddingTop: Platform.OS === "android" ? 0 : 0,
     },
     scrollContent: {
         paddingBottom: 20, // Bottom padding to avoid being obscured
@@ -226,19 +283,19 @@ const styles = StyleSheet.create({
         height: 200,
     },
     slideImage: {
-        width: '100%',
-        height: '100%', // Ensure the image fills the slider height
-        resizeMode: 'cover',
+        width: "100%",
+        height: "100%", // Ensure the image fills the slider height
+        resizeMode: "cover",
     },
     noImageText: {
         fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
+        color: "#666",
+        textAlign: "center",
         padding: 20,
     },
     categoryContainer: {
         marginVertical: 10,
-        backgroundColor: '#F5F5F5', // Light gray background
+        backgroundColor: "#F5F5F5", // Light gray background
     },
     categoryContent: {
         paddingHorizontal: 15,
@@ -247,27 +304,27 @@ const styles = StyleSheet.create({
         marginVertical: 10,
     },
     sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         paddingHorizontal: 15,
         marginBottom: 10,
     },
     sectionTitle: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#000',
+        fontWeight: "bold",
+        color: "#000",
     },
     seeAll: {
         fontSize: 14,
-        color: '#28A745', // Green color for "See ALL" button
-        fontWeight: 'bold',
+        color: "#28A745", // Green color for "See ALL" button
+        fontWeight: "bold",
     },
     productListContainer: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderRadius: 10,
         elevation: 2,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 2,
@@ -278,7 +335,7 @@ const styles = StyleSheet.create({
     },
     noProductText: {
         fontSize: 14,
-        color: '#666',
+        color: "#666",
         padding: 20,
     },
 });

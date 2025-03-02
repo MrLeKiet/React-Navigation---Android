@@ -76,3 +76,73 @@ export const userLogin = async (
         res.status(500).json({ message: { err } });
     }
 };
+
+export const getUserProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = req.headers.authorization?.split(" ")[1]; // Assuming token is sent as "Bearer <token>"
+        if (!userId) {
+            res.status(401).json({ message: "No authorization token provided" });
+            return;
+        }
+
+        const user = await USERLOG.findById(userId).select("-password -confirmPassword -userAddressInfo -orders"); // Exclude sensitive fields
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        res.status(200).json({ 
+            message: "User profile fetched successfully",
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                mobileNo: user.mobileNo,
+            }
+        });
+    } catch (err) {
+        console.error("Error fetching user profile:", err);
+    }
+};
+
+export const updateUserProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = req.headers.authorization?.split(" ")[1]; // Assuming token is sent as "Bearer <token>"
+        if (!userId) {
+            res.status(401).json({ message: "No authorization token provided" });
+            return;
+        }
+
+        const { firstName, lastName, email, mobileNo } = req.body;
+
+        const user = await USERLOG.findById(userId);
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+
+        // Update user fields
+        if (firstName) user.firstName = firstName;
+        if (lastName) user.lastName = lastName;
+        if (email) user.email = email;
+        if (mobileNo) user.mobileNo = mobileNo;
+
+        // Check for duplicate email or mobile number (excluding current user)
+        const existingEmail = await USERLOG.findOne({ email, _id: { $ne: userId } });
+        if (existingEmail) {
+            res.status(400).json({ message: "Email already in use by another user" });
+            return;
+        }
+
+        const existingMobile = await USERLOG.findOne({ mobileNo, _id: { $ne: userId } });
+        if (existingMobile) {
+            res.status(400).json({ message: "Mobile number already in use by another user" });
+            return;
+        }
+
+        await user.save();
+        res.status(200).json({ message: "Profile updated successfully" });
+    } catch (err) {
+        console.error("Error updating profile:", err);
+    }
+};

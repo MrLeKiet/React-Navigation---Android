@@ -36,7 +36,7 @@ const UserAuth = ({ navigation, route }: RootStackScreenProps<"UserLogin">) => {
         setIsSubmitting(true);
     
         axios
-            .post("http://10.106.3.107:9000/user/registerUser", userSignupForm)
+            .post("http://192.168.68.107:9000/user/registerUser", userSignupForm)
             .then((response) => {
                 console.log(response);
                 Alert.alert("User Registration Completed Successfully");
@@ -65,7 +65,7 @@ const UserAuth = ({ navigation, route }: RootStackScreenProps<"UserLogin">) => {
     };
     const SubmitUserLoginForm = () => {
         axios
-            .post("http://10.106.3.107:9000/user/loginUser", userLoginForm)
+            .post("http://192.168.68.107:9000/user/loginUser", userLoginForm)
             .then((response) => {
                 console.log(response);
                 const token = response.data.token;
